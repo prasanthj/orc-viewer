@@ -1,4 +1,4 @@
-{
+var data = {
   "fileName": "TestFileDump.testDump.orc",
   "fileVersion": "0.12",
   "writerVersion": "HIVE_8732",
