@@ -1,9 +1,14 @@
 var fileView
+var fileMetadata = []
+var stripeMetadata = {}
+var footerMetadata = []
 loadLayout()
 
 function loadLayout() {
-	var metadata = getFileMetadata(data);
-	updateMetadataList(metadata);
+	populateFileMetadata(data);
+	populateStripeMetadata(data);
+	populateFooterMetadata(data);
+	updateMetadataList(fileMetadata);
 
 	var originX = $(".col-md-4").width();
 	var originY = 0;
@@ -12,8 +17,7 @@ function loadLayout() {
 	drawFileLayout(data, originX, originY, width, height);
 }
 
-function getFileMetadata(filedump) {
-	var fileMetadata = []
+function populateFileMetadata(filedump) {
 	fileMetadata.push(["Filename", filedump["fileName"]])
 	fileMetadata.push(["Schema", htmlEntities(filedump["schemaString"])])
 	fileMetadata.push(["Compression", filedump["compression"]])
@@ -23,8 +27,24 @@ function getFileMetadata(filedump) {
 	fileMetadata.push(["Row Count", filedump["numberOfRows"]])
 	fileMetadata.push(["File Length", filedump["fileLength"]])
 	fileMetadata.push(["Padding Length", filedump["paddingLength"]])
+}
 
-	return fileMetadata;
+function populateStripeMetadata(filedump) {
+	var stripes = filedump["stripes"]
+	for(var i=0; i<stripes.length; i++) {
+		var stripeInfo = []
+		var stripe = stripes[i]
+        stripeInfo.push(["Offset", stripe["stripeInformation"]["offset"]])
+        stripeInfo.push(["Index Length", stripe["stripeInformation"]["indexLength"]])
+        stripeInfo.push(["Data Length", stripe["stripeInformation"]["dataLength"]])
+        stripeInfo.push(["Footer Length", stripe["stripeInformation"]["footerLength"]])
+        stripeInfo.push(["Row Count", stripe["stripeInformation"]["rowCount"]])
+        stripeMetadata[stripe["stripeNumber"]] = stripeInfo
+	}
+}
+
+function populateFooterMetadata(filedump) {
+
 }
 
 function htmlEntities(str) {
@@ -41,11 +61,12 @@ function updateMetadataList(items) {
 }
 
 function drawFileLayout(filedump, x, y, w, h) {
-	console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
+	//console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
 	fileView = d3.select(".file-layout")
 					.append("svg:svg")
 					.attr("width", w)
-					.attr("height", h);
+					.attr("height", h)
+					.on("click", layoutClick);
 
 	var stripes = filedump["stripes"]
 	var nStripes = filedump["stripes"].length
@@ -65,42 +86,43 @@ function drawFileLayout(filedump, x, y, w, h) {
 }
 
 function drawStripe(fileView, stripes, stripeId, x, y, w, h) {
-	console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
-	fileView.append("svg:rect")
+	//console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
+	var stripe = fileView.append("svg:rect")
 			.attr("x", x)
 			.attr("y", y)
 			.attr("width", w)
 			.attr("height", h)
-			.attr("id", "stripe")
-			.on("mouseover", focus)
-			.on("mouseout", defocus);
+			.attr("class", "stripe")
+			.attr("id", stripeId)
+			.on("click", elementClick);
 
 	fileView.append("svg:text")
 			.attr("x", x + (w / 2))
 			.attr("y", y + (h / 2))
-			.attr("id", "inner-text")
+			.attr("class", "inner-text")
 			.text("Stripe " + stripeId);
 }
 
 function drawFooter(fileView, filedump, x, y, w, h) {
-	console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
+	//console.log("x: " + x + " y: " + y + " w: " + w + " h: " + h)
 	fileView.append("svg:rect")
 			.attr("x", x)
 			.attr("y", y)
 			.attr("width", w)
 			.attr("height", h)
+			.attr("class", "footer")
 			.attr("id", "footer")
-			.on("mouseover", focus)
-			.on("mouseout", defocus);
+			.on("click", elementClick);
 
 	fileView.append("svg:text")
 			.attr("x", x + (w / 2))
 			.attr("y", y + (h / 2))
-			.attr("id", "inner-text")
+			.attr("class", "inner-text")
 			.text("Footer");
 }
 
-function focus() {
+function elementClick() {
+	d3.select(".selected").remove();
 	var x = parseFloat(d3.select(this).attr("x"));
 	var y = parseFloat(d3.select(this).attr("y"));
 	var w = parseFloat(d3.select(this).attr("width"));
@@ -114,10 +136,20 @@ function focus() {
 		    .style("opacity", 0.0)
 		    .transition()
 			.delay(100)
-			.duration(500)
+			.duration(200)
 			.style("opacity", 1.0);
+
+	if (d3.select(this).attr("class") == "stripe") {
+		var stripeId = d3.select(this).attr("id")
+		updateMetadataList(stripeMetadata[stripeId])
+	} else if (d3.select(this).attr("class") == "footer") {
+	}
+
+	// stop the click event from propagting to parent file-layout
+	d3.event.stopPropagation()
 }
 
-function defocus() {
+function layoutClick() {
 	d3.select(".selected").remove();
+	updateMetadataList(fileMetadata)
 }
