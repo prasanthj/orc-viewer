@@ -97,6 +97,12 @@ function elementClick() {
 	var y = parseFloat(d3.select(this).attr("y"));
 	var w = parseFloat(d3.select(this).attr("width"));
 	var h = parseFloat(d3.select(this).attr("height"));
+	if (d3.select(this).attr("class").indexOf("depth-1") > 0) {
+		x = 2 * x
+		y = 2 * y
+		w = 2 * w
+		h = 2 * h	
+	}
 	drawLine(fileView, x, y, x + w, y, "selected", false);
 	drawLine(fileView, x, y + h, x + w, y + h, "selected", false);
 
@@ -108,7 +114,7 @@ function elementClick() {
 		updateMetadataList(fileMetadata)
 		drawFooterExpanded(x, y, w, h)
 	}
-
+	
 	// stop the click event from propagting to parent file-layout
 	d3.event.stopPropagation()
 }
