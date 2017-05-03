@@ -160,9 +160,38 @@ function drawFooterExpanded(x, y, w, h) {
 	var headerHeight = 0.4 * stripeHeight
 	var footerHeight = 0.2 * stripeHeight
 	var bodyHeight = stripeHeight - headerHeight - footerHeight
-	drawRect(depth1, x2, y2, stripeWidth, headerHeight, "stripe-header depth-1", elementClick, "Metadata")
-	drawRect(depth1, x2, y2 + headerHeight, stripeWidth, bodyHeight, "stripe-body depth-1", elementClick, "Footer")
-	drawRect(depth1, x2, y2 + headerHeight + bodyHeight, stripeWidth, footerHeight, "stripe-footer depth-1", elementClick, "Postscript")
+	drawRect(depth1, x2, y2, stripeWidth, headerHeight, "metadata depth-1", elementClick, "Metadata")
+	drawRect(depth1, x2, y2 + headerHeight, stripeWidth, bodyHeight, "footer depth-1", elementClick, "Footer")
+	drawRect(depth1, x2, y2 + headerHeight + bodyHeight, stripeWidth, footerHeight, "postscript depth-1", postscriptClick, "Postscript")
+}
+
+function postscriptClick() {
+	console.log("Postscript clicked")
+	d3.selectAll(".selected").remove();
+	var x = parseFloat(d3.select(this).attr("x"));
+	var y = parseFloat(d3.select(this).attr("y"));
+	var w = parseFloat(d3.select(this).attr("width"));
+	var h = parseFloat(d3.select(this).attr("height"));
+	if (d3.select(this).attr("class").indexOf("depth-1") > 0) {
+		x = 2 * x
+		y = 2 * y
+		w = 2 * w
+		h = 2 * h
+	}
+	drawLine(fileView, x, y, x + w, y, "selected", false);
+	drawLine(fileView, x, y + h, x + w, y + h, "selected", false);
+
+	if (d3.select(this).attr("class") == "stripe") {
+		var stripeId = d3.select(this).attr("id")
+		updateMetadataList(stripeMetadata[stripeId])
+		drawStripeExpanded(x, y, w, h)
+	} else if (d3.select(this).attr("class") == "postscript") {
+		updateMetadataList(fileMetadata)
+		drawFooterExpanded(x, y, w, h)
+	}
+
+	// stop the click event from propagting to parent file-layout
+	d3.event.stopPropagation()
 }
 
 function drawStripeExpanded(x, y, w, h) {
